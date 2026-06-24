@@ -9,8 +9,10 @@ import axios from "axios";
 import { SERVER_URL } from "../utils/constants";
 import { useDispatch } from "react-redux";
 import { setUserData } from "../redux/slices/userSlice";
-function Auth() {
+import { useNavigate } from "react-router-dom";
+function Auth({isModal = false}) {
   const dispatch = useDispatch()
+  const navigate = useNavigate()
   const handleGoogleAuth = async () => {
     try {
       const res = await signInWithPopup(auth, provider);
@@ -36,20 +38,21 @@ function Auth() {
         name,
         email,
         photoUrl,
-        credits : 0
+        credits : result?.data?.credits
       }
       dispatch(setUserData(data))
+      navigate("/")
     } catch (error) {
       console.log(error);
     }
   };
   return (
-    <div className="w-full min-h-screen bg-[#f3f3f3] flex items-center justify-center px-6 py-20">
+    <div className={`w-full ${isModal ? "py-4" : "min-h-screen bg-[#f3f3f3]"}   flex items-center justify-center px-6 py-20`}>
       <motion.div
         initial={{ opacity: 0, y: -40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1.05 }}
-        className="w-full max-w-md p-8 rounded-3xl bg-white shadow-2xl border border-gray-200"
+        className={`w-full  ${isModal ? "max-w-md p-8 rounded-3xl" : "max-w-lg p-12 rounded-4xl"}  bg-white shadow-2xl border border-gray-200`}
       >
         <div className="flex items-center justify-center gap-3 mb-6">
           <div className="bg-black text-white p-2 rounded-lg">

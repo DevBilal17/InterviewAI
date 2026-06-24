@@ -8,12 +8,13 @@ import {useNavigate} from "react-router-dom"
 import axios from "axios";
 import { SERVER_URL } from "../utils/constants";
 import { setUserData } from "../redux/slices/userSlice";
+import AuthModal from "./AuthModal";
 function Navbar() {
-  const user = useSelector((state) => state.user);
+  const user = useSelector((state) => state.user.userData);
   
   const [isShowCreditPopup,setIsShowCreditPopup] = useState(false);
   const [isShowUserPopup,setIsShowUserPopup] = useState(false);
-
+    const [isShowAuth,setisShowAuth] = useState(false)
   const navigate = useNavigate()
   const dispath = useDispatch()
   const handleLogout = async ()=>{
@@ -48,6 +49,10 @@ function Navbar() {
           <div className="relative">
             <button
             onClick={()=>{
+               if(!user){
+                setisShowAuth(true)
+                return
+               }
                 setIsShowCreditPopup(!isShowCreditPopup);
                 setIsShowUserPopup(false)
             }}
@@ -79,6 +84,10 @@ function Navbar() {
           <div className="relative">
             <button
                 onClick={()=>{
+                   if(!user){
+                    setisShowAuth(true)
+                    return
+                   }
                     setIsShowUserPopup(!isShowUserPopup);
                     setIsShowCreditPopup(false)
                 }}
@@ -86,7 +95,7 @@ function Navbar() {
               overflow-hidden
               "
             >
-              {user.photoUrl ? user?.photoUrl == "" ? user.name.slice(0,1).toUpperCase : <img src={user.photoUrl} alt="User-Image"/> : <FaUserAstronaut size={16} />}
+              {user?.photoUrl ? user?.photoUrl == "" ? user.name.slice(0,1).toUpperCase : <img src={user?.photoUrl} alt="User-Image"/> : <FaUserAstronaut size={16} />}
             </button>
 
             {
@@ -110,6 +119,10 @@ function Navbar() {
           </div>
         </div>
       </motion.div>
+
+      {
+        isShowAuth && <AuthModal onClose={()=>setisShowAuth(false)} />
+      }
     </div>
   );
 }
