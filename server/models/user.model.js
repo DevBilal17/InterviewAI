@@ -11,6 +11,10 @@ const userSchema = new mongoose.Schema({
         required:true,
         unique:true
     },
+    photoUrl:{
+        type:String,
+        // required:true,
+    },
     credits:{
         type:Number,
         default : 100
