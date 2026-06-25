@@ -51,7 +51,7 @@ function Auth({isModal = false}) {
       <motion.div
         initial={{ opacity: 0, y: -40 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1.05 }}
+        transition={{ duration: isModal ? 1.01 : 1.05 }}
         className={`w-full  ${isModal ? "max-w-md p-8 rounded-3xl" : "max-w-lg p-12 rounded-4xl"}  bg-white shadow-2xl border border-gray-200`}
       >
         <div className="flex items-center justify-center gap-3 mb-6">
