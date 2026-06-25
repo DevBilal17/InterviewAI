@@ -20,10 +20,15 @@ export const askAi = async (messages) => {
       },
     );
 
-    const content = response?.data?.choices?.[0]?.messages?.content;
+    let content = response?.data?.choices?.[0]?.message?.content;
     if(!content || !content.trim()){
         throw new Error("AI returned empty response")
     }
+    content = content
+  .replace(/```json/g, "")
+  .replace(/```/g, "")
+  .trim();
+    return content
   } catch (error) {
     console.error("OpenRouter Error:",error.response?.data || error.message);
     throw new Error("OpenRouter API Error")

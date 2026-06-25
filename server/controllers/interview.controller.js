@@ -27,26 +27,34 @@ export const analyzeResume = async (req, res) => {
 
     resumeText = resumeText.replace(/\s+/g, " ").trim();
 
-    const messages = [
-      {
-        role: "system",
-        content: `
-                    Extract Structured data from resume.
-                    Return strictly JSON:
+   const messages = [
+  {
+    role: "system",
+    content: `
+You are a strict JSON generator.
 
-                    {
-                        "role" : "string",
-                        "experience" : "string",
-                        "projects" : ["project1","project2"],
-                        "skills" : ["skill1","skill2"]
-                    }
-                `,
-      },
-      {
-        role: "user",
-        content: resumeText,
-      },
-    ];
+RULES (must follow):
+- Output ONLY valid JSON
+- No markdown
+- No backticks
+- No explanation text
+- No extra characters before or after JSON
+- If you fail, output empty JSON {}
+
+SCHEMA:
+{
+  "role": "string",
+  "experience": "string",
+  "projects": ["string"],
+  "skills": ["string"]
+}
+`,
+  },
+  {
+    role: "user",
+    content: resumeText,
+  },
+];
 
     const aiResponse = await askAi(messages);
     const parsed = JSON.parse(aiResponse);
