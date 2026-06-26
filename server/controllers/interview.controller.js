@@ -1,6 +1,9 @@
 import fs from "fs";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 import { askAi } from "../services/openRouter.service.js";
+import User from "../models/user.model.js";
+import Interview from "../models/interview.model.js";
+
 export const analyzeResume = async (req, res) => {
   try {
     if (!req.file) {
@@ -27,10 +30,10 @@ export const analyzeResume = async (req, res) => {
 
     resumeText = resumeText.replace(/\s+/g, " ").trim();
 
-   const messages = [
-  {
-    role: "system",
-    content: `
+    const messages = [
+      {
+        role: "system",
+        content: `
 You are a strict JSON generator.
 
 RULES (must follow):
@@ -49,12 +52,12 @@ SCHEMA:
   "skills": ["string"]
 }
 `,
-  },
-  {
-    role: "user",
-    content: resumeText,
-  },
-];
+      },
+      {
+        role: "user",
+        content: resumeText,
+      },
+    ];
 
     const aiResponse = await askAi(messages);
     const parsed = JSON.parse(aiResponse);
@@ -62,22 +65,158 @@ SCHEMA:
     fs.unlinkSync(filePath);
 
     return res.status(200).json({
-        role : parsed.role,
-        experience : parsed.experience,
-        projects : parsed.projects,
-        skills : parsed.skills,
-        resumeText
-    })
-
-
+      role: parsed.role,
+      experience: parsed.experience,
+      projects: parsed.projects,
+      skills: parsed.skills,
+      resumeText,
+    });
   } catch (error) {
     console.log(`Resume Analyze Error: ${error}`);
-    if(req.file && fs.existsSync(req.file.path)){
-        fs.unlinkSync(req.file.path);
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
     }
 
     return res.status(500).json({
-        message: error.message
-    })
+      message: error.message,
+    });
+  }
+};
+
+export const generateQuestions = async (req, res) => {
+  try {
+    const { role, experience, mode, resumeText, projects, skills } = req.body;
+
+    role = role?.trim();
+    experience = experience?.trim();
+    mode = mode?.trim();
+    if (!role || !experience || !mode) {
+      return res.status(400).json({
+        message: "Role, Experience and Mode are required",
+      });
+    }
+
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      return res.status(400).json({
+        message: "User not found",
+      });
+    }
+    if (user.credits < 50) {
+      return res.status(400).json({
+        message: "Not enough credits, Minimum 50 required.",
+      });
+    }
+
+    const projectsText =
+      Array.isArray(projects) && projects.length ? projects.join(", ") : "None";
+
+    const skillsText =
+      Array.isArray(skills) && skills.length ? skills.join(", ") : "None";
+
+    const safeResumeText = resumeText?.trim() || "None";
+
+    const userPrompt = `
+     Role : ${role}
+     Experience : ${experience}
+     Interview Mode : ${mode}
+     Projects : ${projectsText}
+     Skills : ${skillsText}
+     Resume : ${safeResumeText}
+    `;
+    if (!userPrompt.trim()) {
+      return res.status(400).json({
+        message: "User prompt content is empty",
+      });
+    }
+    const message = [
+      {
+        role: "system",
+        content: `
+        You are a real human interviewer, conducting a professional interview.
+
+        Speak in simple, natural English as if you are direclty talking to the candidate.
+
+        Generate exactly 5 interview questions.
+
+        Strict Rules:
+        - Each question must contain words between 15 and 25.
+        - Each question must be a single complete sentence.
+        - Do NOT number them.
+        - Do Not add explanation.
+        - Do NOT add extra text before or after.
+        - One question per line only.
+        - keep language simple and conversational.
+        - Questions must  feel practical and realistic.
+
+        Difficulty progression:
+          Question 1 -> easy
+          Question 2 -> easy
+          Question 3 -> medium
+          Question 4 -> medium
+          Question 5 -> hard
+
+
+        Make questions based on the candidate's role, experience, Interview Mode, projects, skills and resume details.
+        `,
+      },
+      {
+        role: "user",
+        content: userPrompt,
+      },
+    ];
+
+    const aiResponse = await askAi(message);
+
+    if (!aiResponse || !aiResponse.trim()) {
+      return res.status(500).json({
+        message: "AI returned empty response",
+      });
+    }
+
+    const questionsArray = aiResponse
+      .split("\n")
+      .map((q) => q.trim())
+      .filter((q) => q.length > 0)
+      .slice(0, 5);
+
+    if (questionsArray.length === 0) {
+      return res.status(500).json({
+        message: "AI failed to generate questions",
+      });
+    }
+
+    user.credits -= 50;
+    await user.save();
+
+    const interview = await Interview.create({
+      userId: user._id,
+      role,
+      experience,
+      mode,
+      resumeText,
+      questions: questionsArray.map((q, i) => ({
+        question: q,
+        difficulty: ["easy", "easy", "medium", "medium", "hard"][i],
+        timeLimit: [60, 60, 90, 90, 120][i],
+      })),
+    });
+
+    return res.status(200).json({
+      message: "Interview created successfully",
+      data: {
+        interviewId: interview._id,
+        creditsLeft: user.credits,
+        userName: user.name,
+        questions: interview.questions,
+      },
+    });
+  } catch (error) {
+    console.log(`Generate Questions Error: ${error}`);
+
+    return res.status(500).json({
+      message: error.message,
+    });
   }
 };
