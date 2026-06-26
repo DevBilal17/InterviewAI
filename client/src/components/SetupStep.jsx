@@ -9,10 +9,14 @@ import {
 } from "react-icons/fa";
 import axios from "axios";
 import { SERVER_URL } from "../utils/constants";
+import { useDispatch, useSelector } from "react-redux";
+import { setUserData } from "../redux/slices/userSlice";
 function SetupStep({ onStart }) {
+  const user = useSelector((state) => state.user.userData);
+  const dispatch = useDispatch()
   const [role, setRole] = useState("");
   const [experience, setExperience] = useState("");
-  const [mode, setMode] = useState("");
+  const [mode, setMode] = useState("Technical");
   const [isLoading, setIsLoading] = useState(false);
   const [resumeFile, setResumeFile] = useState(null);
   const [projects, setProjects] = useState([]);
@@ -52,6 +56,28 @@ function SetupStep({ onStart }) {
     }
   };
 
+  const handleStartInterview = async ()=>{
+    setIsLoading(true);
+    try {
+      console.log(role,experience,mode,resumeText,projects,skills)
+      const response = await axios.post(`${SERVER_URL}/api/interview/generate-questions`,{
+        role,experience,mode,resumeText,projects,skills
+      },{
+        withCredentials:true
+      })
+
+      console.log(response.data);
+      if(user){
+        dispatch(setUserData({...user,credits:response.data.data.creditsLeft}))
+      }
+      setIsLoading(false);
+
+      onStart(response?.data?.data)
+    } catch (error) {
+      console.log(error);
+      setIsLoading(false)
+    }
+  }
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -141,7 +167,7 @@ function SetupStep({ onStart }) {
               onChange={(e) => setMode(e.target.value)}
               className="w-full px-3 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition"
             >
-              <option value="Technical">Technical Interview</option>
+              <option value="Technical" selected>Technical Interview</option>
               <option value="HR">HR Interview</option>
             </select>
 
@@ -222,12 +248,13 @@ function SetupStep({ onStart }) {
             }
 
             <motion.button
-              disabled={!role || !experience}
+            onClick={handleStartInterview}
+              disabled={!role || !experience || isLoading}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.95 }}
               className="w-full disabled:bg-gray-600 bg-green-600 hover:bg-green-700 text-white py-3 rounded-full text-lg font-semibold transition duration-300 shadow-md"
             >
-              Start Interview
+              {isLoading ? "Starting....." : "Start Interview"}
             </motion.button>
           </div>
         </motion.div>

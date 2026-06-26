@@ -85,18 +85,18 @@ SCHEMA:
 
 export const generateQuestions = async (req, res) => {
   try {
-    const { role, experience, mode, resumeText, projects, skills } = req.body;
-
+    let { role, experience, mode, resumeText, projects, skills } = req.body;
     role = role?.trim();
     experience = experience?.trim();
     mode = mode?.trim();
+    // console.log(role, experience, mode, resumeText, projects, skills)
     if (!role || !experience || !mode) {
       return res.status(400).json({
         message: "Role, Experience and Mode are required",
       });
     }
 
-    const user = await User.findById(req.userId);
+    let user = await User.findById(req.userId);
 
     if (!user) {
       return res.status(400).json({
