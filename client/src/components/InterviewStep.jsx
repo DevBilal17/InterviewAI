@@ -95,6 +95,18 @@ function InterviewStep({ interviewData, onFinish }) {
         setIsAIPlaying(true);
         videoRef.current?.play();
       }
+
+      utterance.onend = () => {
+        videoRef.current?.pause();
+        videoRef.current.currentTime = 0;
+        setIsAIPlaying(false);
+
+
+        setTimeout(()=>{
+          setSubtitle("");
+          resolve();
+        },300)
+      }
     })
   }
 
