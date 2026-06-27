@@ -65,11 +65,11 @@ function InterviewStep({ interviewData, onFinish }) {
 
             <div className="grid grid-cols-2 gap-6 text-center">
               <div>
-                <span className="text-2xl font-bold text-emerald-600">1</span>
+                <span className="text-2xl font-bold text-emerald-600">{currentIndex + 1}</span>
                 <span className="text-xs text-gray-400">Current Question</span>
               </div>
               <div>
-                <span className="text-2xl font-bold text-emerald-600">5</span>
+                <span className="text-2xl font-bold text-emerald-600">{questions?.length}</span>
                 <span className="text-xs text-gray-400">Total Questions</span>
               </div>
             </div>
@@ -87,11 +87,11 @@ function InterviewStep({ interviewData, onFinish }) {
           sm:p-6 rounded-2xl border border-gray-200 shadow-sm
           ">
             <p className="text-xs sm:text-sm text-gray-400 mb-2">
-              Question 1 of 5
+              Question {currentIndex + 1} of {questions?.length}
             </p>
 
             <div className="text-base sm:text-lg font-semibold text-gray-800 leading-relaxed">
-              First Question
+              {currentQuestion?.question}
             </div>
           </div>
 
