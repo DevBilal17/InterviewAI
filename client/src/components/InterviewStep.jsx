@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useState } from "react";
 import maleVideo from "../assets/videos/Videos/male-ai.mp4";
 import femaleVideo from "../assets/videos/Videos/female-ai.mp4";
 import Timer from "./Timer";
@@ -7,9 +7,28 @@ import { motion } from "motion/react";
 
 import { FaMicrophone , FaMicrophoneSlash} from "react-icons/fa";
 function InterviewStep({ interviewData, onFinish }) {
-  // const { interviewId, questions, userName } = interviewData;
-  // console.log(interviewData);
+  const { interviewId, questions, userName } = interviewData;
+  console.log(interviewData);
 
+  const [isIntroPhase,setIsIntroPhase] = useState(true);
+
+  const [isMicOn, setIsMicOn] = useState(true);
+  const recognitionRef = useRef(null);
+  const [isAIPlaying,setIsAIPlaying] = useState(false);
+
+  const [currentIndex,setCurrentIndex] = useState(0);
+  const [answer,setAnswer] = useState("");
+  const [feedback,setFeedback] = useState("");
+  const [timeLeft,setTimeLeft] = useState(questions[0]?.timeLeft || 60);
+
+  const [selectedVoice,setSelectedVoice] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [voiceGender,setVoiceGender] = useState("female");
+  const [subtitle, setSubtitle] = useState("");
+  
+  const videoRef = useRef(null);
+
+  const currentQuestion = questions[currentIndex];
   return (
     <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-100 flex items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-350 min-h-[80vh] bg-white rounded-3xl shadow-2xl border border-gray-200 flex flex-col lg:flex-row overflow-hidden">

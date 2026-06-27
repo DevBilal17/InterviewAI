@@ -4,7 +4,7 @@ import InterviewStep from '../components/InterviewStep';
 import ReportStep from '../components/ReportStep';
 
 function Interview() {
-    const [step,setStep] = useState(2);
+    const [step,setStep] = useState(1);
     const [interviewData,setInterviewData] = useState(null);
   return (
     <div className='min-h-screen bg-gray-50'>
