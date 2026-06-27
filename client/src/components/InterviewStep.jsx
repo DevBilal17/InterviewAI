@@ -114,6 +114,39 @@ function InterviewStep({ interviewData, onFinish }) {
     })
   }
 
+  useEffect(()=>{
+    if(!selectedVoice){
+      return;
+    }
+
+    const runIntro  = async()=>{
+      if(isIntroPhase){
+        await speakText(`
+          Hi ${userName}, it's great to meet you today. I hope you're feeling confident and ready.
+          `)
+
+        await speakText(`
+          I'll ask you a few questions. Just answer naturally, and take your time. Let's begin.
+          `)
+
+        setIsIntroPhase(false);
+      }
+      else if(currentQuestion){
+        await new Promise(r => setTimeout(r,800));
+
+        // if last question (hard level)
+        if(currentIndex === questions.length - 1){
+          await speakText("Alright, this one might be a bit more challenging.");
+        }
+
+
+        await speakText(currentQuestion.question)
+
+      }
+    }
+
+  },[selectedVoice, isIntroPhase])
+
   return (
     <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-100 flex items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-350 min-h-[80vh] bg-white rounded-3xl shadow-2xl border border-gray-200 flex flex-col lg:flex-row overflow-hidden">
