@@ -63,6 +63,41 @@ function InterviewStep({ interviewData, onFinish }) {
     window.speechSynthesis.onvoiceschanged = loadVoices
   },[])
 
+
+  const videoSource = voiceGender === "male" ? maleVideo : femaleVideo;
+
+  // Speak Function
+
+  const speakText = (text) => {
+    return new Promise((resolve)=>{
+      if (!window.speechSynthesis || !selectedVoice){
+        resolve();
+        return;
+      }
+
+
+      window.speechSynthesis.cancel();
+
+      // Add natural pauses after commas and periods
+      const humanText = text.replace(/,/g,", ... ")
+      .replace(/\./g,". ... ");
+
+      const utterance = new SpeechSynthesisUtterance(humanText);
+
+      utterance.voice = selectedVoice;
+
+      // Human-like pacing
+      utterance.rate = 0.92;
+      utterance.pitch = 1.05;
+      utterance.volume = 1;
+
+      utterance.onstart = () => {
+        setIsAIPlaying(true);
+        videoRef.current?.play();
+      }
+    })
+  }
+
   return (
     <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-100 flex items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-350 min-h-[80vh] bg-white rounded-3xl shadow-2xl border border-gray-200 flex flex-col lg:flex-row overflow-hidden">
@@ -70,7 +105,9 @@ function InterviewStep({ interviewData, onFinish }) {
         <div className="w-full lg:w-[35%] bg-white flex flex-col items-center p-6 space-y-6 border-r border-gray-200">
           <div className="w-full max-w-md rounded-2xl overflow-hidden">
             <video
-              src={femaleVideo}
+              src={videoSource}
+              key={videoSource}
+              ref={videoRef}
               muted
               playsInline
               preload="auto"
