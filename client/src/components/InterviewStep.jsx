@@ -2,10 +2,11 @@ import React, { useEffect, useRef, useState } from "react";
 import maleVideo from "../assets/videos/Videos/male-ai.mp4";
 import femaleVideo from "../assets/videos/Videos/female-ai.mp4";
 import Timer from "./Timer";
-
+import { SERVER_URL } from "../utils/constants";
 import { motion } from "motion/react";
-
+import axios from "axios";
 import { FaMicrophone, FaMicrophoneSlash } from "react-icons/fa";
+import { BsArrowLeft } from "react-icons/bs";
 function InterviewStep({ interviewData, onFinish }) {
   const { interviewId, questions, userName } = interviewData;
   console.log(interviewData);
@@ -99,6 +100,7 @@ function InterviewStep({ interviewData, onFinish }) {
 
       utterance.onstart = () => {
         setIsAIPlaying(true);
+        stopMic();
         videoRef.current?.play();
       };
 
@@ -106,6 +108,10 @@ function InterviewStep({ interviewData, onFinish }) {
         videoRef.current?.pause();
         videoRef.current.currentTime = 0;
         setIsAIPlaying(false);
+
+        if (isMicOn) {
+          startMic();
+        }
 
         setTimeout(() => {
           setSubtitle("");
@@ -144,6 +150,10 @@ function InterviewStep({ interviewData, onFinish }) {
         }
 
         await speakText(currentQuestion.question);
+
+        // if (isMicOn) {
+        //   startMic();
+        // }
       }
     };
 
@@ -153,7 +163,7 @@ function InterviewStep({ interviewData, onFinish }) {
   useEffect(() => {
     if (isIntroPhase) return;
     if (!currentQuestion) return;
-
+    if (isSubmitting) return;
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
@@ -165,11 +175,18 @@ function InterviewStep({ interviewData, onFinish }) {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isIntroPhase, currentIndex]);
+  }, [isIntroPhase, currentIndex, isSubmitting]);
 
   // our voice to text
   useEffect(() => {
-    if (!("webkitSpeechRecognition" in window)) return;
+      console.log("webkitSpeechRecognition" in window);
+
+  if (!("webkitSpeechRecognition" in window)) {
+    console.log("Speech Recognition Not Supported");
+    return;
+  }
+
+  console.log("Speech Recognition Supported");
 
     const recognition = new window.webkitSpeechRecognition();
     recognition.lang = "en-US";
@@ -189,34 +206,111 @@ function InterviewStep({ interviewData, onFinish }) {
   }, []);
 
   const startMic = () => {
-    if(recognitionRef.current && !isAIPlaying){
+    if (recognitionRef.current && !isAIPlaying) {
       try {
-        recognitionRef.current.start()
+        recognitionRef.current.start();
       } catch (error) {
-        console.log(error)
+        console.log(error);
       }
     }
-  }
+  };
 
-  const stopMic = () =>{
-     if(recognitionRef.current){
+  const stopMic = () => {
+    if (recognitionRef.current) {
       recognitionRef.current.stop();
-     }
-  }
+    }
+  };
 
   const toggleMic = () => {
-    if(isMicOn){
-      stopMic()
+    if (isMicOn) {
+      stopMic();
+    } else {
+      startMic();
     }
-    else{
-      startMic()
+    setIsMicOn(!isMicOn);
+  };
+
+  const submitAnswer = async () => {
+    if (isSubmitting) return;
+    stopMic();
+    setIsSubmitting(true);
+    try {
+      const response = await axios.post(
+        `${SERVER_URL}/api/interview/submit-answer`,
+        {
+          interviewId,
+          questionIndex: currentIndex,
+          answer,
+          timeTaken: currentQuestion.timeLimit - timeLeft,
+        },
+        {
+          withCredentials: true,
+        },
+      );
+      console.log(response);
+
+      setFeedback(response?.data?.data?.feedback);
+      speakText(response?.data?.data?.feedback);
+      setIsSubmitting(false);
+    } catch (error) {
+      console.log(error);
+      setIsSubmitting(false);
     }
-    setIsMicOn(!isMicOn)
+  };
+
+  const handleNext = async () => {
+    setAnswer("");
+    setFeedback("")
+    
+    if(currentIndex + 1 >= questions.length){
+      finishInterview();
+      return
+    }
+
+    await speakText("Alright, let's move to the next question.");
+
+    setCurrentIndex(currentIndex + 1);
+    setTimeout(()=>{
+      if (isMicOn) startMic();
+    },500)
   }
 
+  const finishInterview = async () => {
+    stopMic();
+    setIsMicOn(false);
+    try {
+      const response = await axios.post(`${SERVER_URL}/api/interview/finish`,{
+        interviewId
+      },{withCredentials:true})
+
+      console.log(response);
+
+      onFinish(response?.data?.data)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  useEffect(()=>{
+    if(isIntroPhase) return;
+    if(!currentQuestion) return;
+
+    if(timeLeft === 0 && !isSubmitting && !feedback){
+      submitAnswer()
+    }
+  },[timeLeft])
+
+  useEffect(()=>{
+    return ()=>{
+      if(recognitionRef.current){
+        recognitionRef.current.stop();
+        recognitionRef.current.abort()
+      }
 
 
-
+      window.speechSynthesis.cancel();
+    }
+  },[])
   return (
     <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-100 flex items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-350 min-h-[80vh] bg-white rounded-3xl shadow-2xl border border-gray-200 flex flex-col lg:flex-row overflow-hidden">
@@ -311,21 +405,42 @@ function InterviewStep({ interviewData, onFinish }) {
             className="flex-1 bg-gray-100 p-4 sm:p-6 rounded-2xl resize-none outline-none border border-gray-200 focus:ring-2 focus:ring-emerald-500 transition text-gray-800"
           />
 
-          <div className="flex items-center gap-4 mt-6">
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-full bg-black text-white shadow-lg"
-            >
-              <FaMicrophone size={20} />
-            </motion.button>
+          {!feedback ? (
+            <div className="flex items-center gap-4 mt-6">
+              <motion.button
+                onClick={toggleMic}
+                whileTap={{ scale: 0.9 }}
+                className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-full bg-black text-white shadow-lg"
+              >
+                {isMicOn ? <FaMicrophone size={20} />: <FaMicrophoneSlash size={20}/> }
+              </motion.button>
 
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              className="flex-1 bg-linear-to-br from-emerald-600 to-teal-500 text-white py-3 sm:py-4 rounded-2xl shadow-lg hover:opacity-90 transition font-semibold"
+              <motion.button
+                onClick={submitAnswer}
+                disabled={isSubmitting}
+                whileTap={{ scale: 0.9 }}
+                className="flex-1 bg-linear-to-br from-emerald-600 to-teal-500 text-white py-3 sm:py-4 rounded-2xl shadow-lg hover:opacity-90 transition font-semibold
+              disabled:bg-gray-500
+              "
+              >
+                {isSubmitting ? "Submitting......" : "Submit Answer"}
+              </motion.button>
+            </div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mt-6 bg-emerald-50 border border-emerald-200 p-5 rounded-2xl shadow-sm"
             >
-              Submit Answer
-            </motion.button>
-          </div>
+              <p className="text-emerald-700 font-medium mb-4">{feedback}</p>
+
+              <button 
+              onClick={handleNext}
+              className="w-full bg-linear-to-r from-emerald-600 to-teal-500 text-white py-3 rounded-xl shadow-md hover:opacity-90 transition flex items-center justify-center gap-1">
+                Next Question <BsArrowLeft size={18}/>
+              </button>
+            </motion.div>
+          )}
         </div>
       </div>
     </div>
