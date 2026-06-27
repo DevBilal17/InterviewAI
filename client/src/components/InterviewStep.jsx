@@ -107,6 +107,10 @@ function InterviewStep({ interviewData, onFinish }) {
           resolve();
         },300)
       }
+
+      setSubtitle(text);
+
+      window.speechSynthesis.speak(utterance)
     })
   }
 
@@ -133,9 +137,9 @@ function InterviewStep({ interviewData, onFinish }) {
           <div className="w-full max-w-md bg-white border border-gray-200 rounded-2xl shadow-md p-6 space-y-5">
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-500">Interview Status</span>
-              <span className="text-sm font-semibold text-emerald-600">
-                AI Speaking
-              </span>
+              {isAIPlaying && <span className="text-sm font-semibold text-emerald-600">
+                {isAIPlaying ? "AI Speaking" : ""}
+              </span>}
             </div>
 
             <div className="h-px bg-gray-200"></div>
