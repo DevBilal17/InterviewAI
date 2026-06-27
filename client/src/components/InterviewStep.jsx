@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import maleVideo from "../assets/videos/Videos/male-ai.mp4";
 import femaleVideo from "../assets/videos/Videos/female-ai.mp4";
 import Timer from "./Timer";
@@ -29,6 +29,40 @@ function InterviewStep({ interviewData, onFinish }) {
   const videoRef = useRef(null);
 
   const currentQuestion = questions[currentIndex];
+
+  useEffect(()=>{
+    const loadVoices = () => {
+      const voices = window.speechSynthesis.getVoices();
+      if(!voices.length) return;
+
+      // Try known female voices first
+      const femaleVoice = voices.find( v => v.name.toLowerCase().includes("zira") || v.name.toLowerCase().includes("samantha") || v.name.toLowerCase().includes("female"));
+
+      if(femaleVoice){
+        setSelectedVoice(femaleVoice);
+        setVoiceGender("female");
+        return;
+      }
+
+      // Try known male voices
+      const maleVoice = voices.find( v => v.name.toLowerCase().includes("david") || v.name.toLowerCase().includes("mark") || v.name.toLowerCase().includes("male"));
+
+      if(maleVoice){
+        setSelectedVoice(maleVoice);
+        setVoiceGender("male");
+        return;
+      }
+
+
+      // Fallback: first voice (assume female)
+      setSelectedVoice(voices[0]);
+      setVoiceGender("female")
+    }
+
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices
+  },[])
+
   return (
     <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-100 flex items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-350 min-h-[80vh] bg-white rounded-3xl shadow-2xl border border-gray-200 flex flex-col lg:flex-row overflow-hidden">
