@@ -150,22 +150,43 @@ function InterviewStep({ interviewData, onFinish }) {
     runIntro();
   }, [selectedVoice, isIntroPhase, currentIndex]);
 
-  useEffect(()=>{
-    if(isIntroPhase) return;
-    if(!currentQuestion) return;
+  useEffect(() => {
+    if (isIntroPhase) return;
+    if (!currentQuestion) return;
 
-    const timer = setInterval(()=>{
-      setTimeLeft((prev)=>{
-        if(prev<=1){
-          clearInterval(timer)
-          return
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
         }
-        return prev-1
-      })
-    },1000)
+        return prev - 1;
+      });
+    }, 1000);
 
-    return ()=>clearInterval(timer)
-  },[isIntroPhase,currentIndex])
+    return () => clearInterval(timer);
+  }, [isIntroPhase, currentIndex]);
+
+  // our voice to text
+  useEffect(() => {
+    if (!("webkitSpeechRecognition" in window)) return;
+
+    const recognition = new window.webkitSpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    recognition.onresult = (event) => {
+      const transcript = event.results[event.results.length - 1][0].transcript;
+
+      setAnswer((prev) => prev + " " + transcript);
+    };
+
+    recognitionRef.current = recognition;
+    return () => {
+      recognition.stop();
+      recognitionRef.current = null;
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-100 flex items-center justify-center p-4 sm:p-6">
@@ -206,7 +227,10 @@ function InterviewStep({ interviewData, onFinish }) {
             <div className="h-px bg-gray-200"></div>
 
             <div className="flex justify-center">
-              <Timer timeLeft={timeLeft} totalTime={currentQuestion.timeLimit} />
+              <Timer
+                timeLeft={timeLeft}
+                totalTime={currentQuestion.timeLimit}
+              />
             </div>
 
             <div className="h-px bg-gray-200"></div>
@@ -253,6 +277,8 @@ function InterviewStep({ interviewData, onFinish }) {
           <textarea
             placeholder="Type your answer here...
           "
+            value={answer}
+            onChange={(e) => setAnswer(e.target.value)}
             className="flex-1 bg-gray-100 p-4 sm:p-6 rounded-2xl resize-none outline-none border border-gray-200 focus:ring-2 focus:ring-emerald-500 transition text-gray-800"
           />
 
