@@ -14,7 +14,7 @@ function Report() {
           withCredentials:true
         })
 
-        console.log(res.data)
+        // console.log(res.data)
         setReport(res?.data?.data)
       } catch (error) {
         console.log(error)
