@@ -8,6 +8,7 @@ import { SERVER_URL } from './utils/constants'
 import { useDispatch } from 'react-redux'
 import { setUserData } from './redux/slices/userSlice'
 import History from './pages/History'
+import Pricing from './pages/Pricing'
 
 function App() {
   const dispatch = useDispatch()
@@ -31,6 +32,8 @@ function App() {
       <Route path='/auth' element={<Auth/>}/>
       <Route path='/interview' element={<Interview/>}/>
       <Route path='/history' element={<History/>} />
+
+      <Route path='/pricing' element={<Pricing/>} />
     </Routes>
   )
 }
