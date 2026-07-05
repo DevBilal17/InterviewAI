@@ -1,26 +1,46 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { BsRobot } from "react-icons/bs";
 import { IoSparkles } from "react-icons/io5";
 import { FcGoogle } from "react-icons/fc";
 import { motion } from "motion/react";
-import { signInWithPopup } from "firebase/auth";
+import {
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+} from "firebase/auth";
 import { auth, provider } from "../utils/firebase";
 import axios from "axios";
 import { SERVER_URL } from "../utils/constants";
 import { useDispatch } from "react-redux";
 import { setUserData } from "../redux/slices/userSlice";
 import { useNavigate } from "react-router-dom";
-function Auth({isModal = false}) {
-  const dispatch = useDispatch()
-  const navigate = useNavigate()
+function Auth({ isModal = false }) {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const isMobileDevice = () => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent,
+    );
+  };
   const handleGoogleAuth = async () => {
+    // console.log("Button Clicked");
+
     try {
+      // if (isMobileDevice()) {
+      //   console.log("Mobile Device");
+      //   await signInWithRedirect(auth, provider);
+      //   return;
+      // }
+
+      // console.log("Desktop");
+
+      // Desktop
       const res = await signInWithPopup(auth, provider);
-      console.log(res);
-      let User = res?.user;
-      let name = User?.displayName;
-      let email = User?.email;
-      let photoUrl = User?.photoURL || "";
+
+      let User = res.user;
+      let name = User.displayName;
+      let email = User.email;
+      let photoUrl = User.photoURL || "";
 
       const result = await axios.post(
         `${SERVER_URL}/api/auth/google`,
@@ -33,21 +53,67 @@ function Auth({isModal = false}) {
           withCredentials: true,
         },
       );
-      console.log(result.data)
-      const data = {
-        name,
-        email,
-        photoUrl,
-        credits : result?.data?.credits
-      }
-      dispatch(setUserData(data))
-      navigate("/")
+
+      dispatch(
+        setUserData({
+          name,
+          email,
+          photoUrl,
+          credits: result.data.credits,
+        }),
+      );
+
+      navigate("/");
     } catch (error) {
-      console.log(error);
+      console.log(error.code);
+      console.log(error.message);
     }
   };
+  // useEffect(() => {
+  //   const handleRedirect = async () => {
+  //     try {
+  //       const res = await getRedirectResult(auth);
+
+  //       if (!res) return;
+
+  //       let User = res.user;
+  //       let name = User.displayName;
+  //       let email = User.email;
+  //       let photoUrl = User.photoURL || "";
+
+  //       const result = await axios.post(
+  //         `${SERVER_URL}/api/auth/google`,
+  //         {
+  //           name,
+  //           email,
+  //           photoUrl,
+  //         },
+  //         {
+  //           withCredentials: true,
+  //         },
+  //       );
+
+  //       dispatch(
+  //         setUserData({
+  //           name,
+  //           email,
+  //           photoUrl,
+  //           credits: result.data.credits,
+  //         }),
+  //       );
+
+  //       navigate("/");
+  //     } catch (error) {
+  //       console.log(error);
+  //     }
+  //   };
+
+  //   handleRedirect();
+  // }, []);
   return (
-    <div className={`w-full ${isModal ? "py-4" : "min-h-screen bg-[#f3f3f3]"}   flex items-center justify-center px-6 py-20`}>
+    <div
+      className={`w-full ${isModal ? "py-4" : "min-h-screen bg-[#f3f3f3]"}   flex items-center justify-center px-6 py-20`}
+    >
       <motion.div
         initial={{ opacity: 0, y: -40 }}
         animate={{ opacity: 1, y: 0 }}

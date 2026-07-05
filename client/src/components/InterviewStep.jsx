@@ -6,7 +6,7 @@ import { SERVER_URL } from "../utils/constants";
 import { motion } from "motion/react";
 import axios from "axios";
 import { FaMicrophone, FaMicrophoneSlash } from "react-icons/fa";
-import { BsArrowLeft } from "react-icons/bs";
+import { BsArrowLeft, BsArrowRight } from "react-icons/bs";
 function InterviewStep({ interviewData, onFinish }) {
   const { interviewId, questions, userName } = interviewData;
   console.log(interviewData);
@@ -85,7 +85,8 @@ function InterviewStep({ interviewData, onFinish }) {
       }
 
       window.speechSynthesis.cancel();
-
+console.log("text:", text);
+console.log("typeof text:", typeof text);
       // Add natural pauses after commas and periods
       const humanText = text.replace(/,/g, ", ... ").replace(/\./g, ". ... ");
 
@@ -163,7 +164,7 @@ function InterviewStep({ interviewData, onFinish }) {
   useEffect(() => {
     if (isIntroPhase) return;
     if (!currentQuestion) return;
-    if (isSubmitting) return;
+    // if (isSubmitting) return;
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
@@ -175,8 +176,12 @@ function InterviewStep({ interviewData, onFinish }) {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isIntroPhase, currentIndex, isSubmitting]);
-
+  }, [isIntroPhase, currentIndex]);
+useEffect(()=>{
+  if(!isIntroPhase && currentQuestion ){
+    setTimeLeft(currentQuestion.timeLimit || 0)
+  }
+},[currentIndex])
   // our voice to text
   useEffect(() => {
       console.log("webkitSpeechRecognition" in window);
@@ -249,8 +254,8 @@ function InterviewStep({ interviewData, onFinish }) {
       );
       console.log(response);
 
-      setFeedback(response?.data?.data?.feedback);
-      speakText(response?.data?.data?.feedback);
+      setFeedback(response?.data?.feedback);
+      speakText(response?.data?.feedback);
       setIsSubmitting(false);
     } catch (error) {
       console.log(error);
@@ -437,7 +442,7 @@ function InterviewStep({ interviewData, onFinish }) {
               <button 
               onClick={handleNext}
               className="w-full bg-linear-to-r from-emerald-600 to-teal-500 text-white py-3 rounded-xl shadow-md hover:opacity-90 transition flex items-center justify-center gap-1">
-                Next Question <BsArrowLeft size={18}/>
+                Next Question <BsArrowRight size={18}/>
               </button>
             </motion.div>
           )}
