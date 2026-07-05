@@ -7,6 +7,7 @@ import axios from 'axios'
 import { SERVER_URL } from './utils/constants'
 import { useDispatch } from 'react-redux'
 import { setUserData } from './redux/slices/userSlice'
+import History from './pages/History'
 
 function App() {
   const dispatch = useDispatch()
@@ -29,6 +30,7 @@ function App() {
       <Route path='/' element={<Home/>}/>
       <Route path='/auth' element={<Auth/>}/>
       <Route path='/interview' element={<Interview/>}/>
+      <Route path='/history' element={<History/>} />
     </Routes>
   )
 }
