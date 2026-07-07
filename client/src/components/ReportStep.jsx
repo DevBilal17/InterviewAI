@@ -192,7 +192,9 @@ function ReportStep({ report }) {
           </div>
         </div>
 
-        <button className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl shadow-md transition-all duration-300 font-semibold text-sm sm:text-base text-nowrap ">
+        <button 
+        onClick={downloadPDF}
+        className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl shadow-md transition-all duration-300 font-semibold text-sm sm:text-base text-nowrap ">
           Downlaod PDF
         </button>
       </div>
